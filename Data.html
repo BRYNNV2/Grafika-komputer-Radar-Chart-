@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisasi Data CPMK</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1000px;
+            width: 100%;
+        }
+        .chart-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background-color: white;
+        }
+        .controls {
+            margin-top: 20px;
+            width: 100%;
+        }
+        .select-container {
+            margin-bottom: 20px;
+        }
+        select {
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .stats {
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .stat-item {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+        }
+        h2, h3 {
+            color: #333;
+        }
+        .toggle-view {
+            margin: 15px 0;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.active {
+            background-color: #2E7D32;
+        }
+        .view-container {
+            width: 100%;
+        }
+        #mahasiswaTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        #mahasiswaTable th, #mahasiswatable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        #mahasiswaTable th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+        }
+        #mahasiswaTable tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        #mahasiswaTable tr:hover {
+            background-color: #f0f0f0;
+        }
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Visualisasi Data CPMK</h1>
+        
+        <div class="toggle-view">
+            <button id="btnChart" class="active" onclick="showView('chartView')">Radar Chart</button>
+            <button id="btnTable" onclick="showView('tableView')">Tabel Data</button>
+        </div>
+        
+        <div id="chartView" class="view-container">
+            <div class="select-container">
+                <label for="mahasiswaSelect">Pilih Mahasiswa: </label>
+                <select id="mahasiswaSelect" onchange="updateMahasiswaChart()"></select>
+            </div>
+            
+            <div class="chart-container">
+                <h2 id="mahasiswaName">Mahasiswa: -</h2>
+                <canvas id="radarChart" width="500" height="500"></canvas>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <h3>CPMK012</h3>
+                    <p id="cpmk012Value">-</p>
+                </div>
+                <div class="stat-item">
+                    <h3>CPMK031</h3>
+                    <p id="cpmk031Value">-</p>
+                </div>
+                <div class="stat-item">
+                    <h3>CPMK071</h3>
+                    <p id="cpmk071Value">-</p>
+                </div>
+                <div class="stat-item">
+                    <h3>CPMK072</h3>
+                    <p id="cpmk072Value">-</p>
+                </div>
+                <div class="stat-item">
+                    <h3>Total TBP</h3>
+                    <p id="totalValue">-</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="tableView" class="view-container" style="display: none;">
+            <h2>Data Mahasiswa</h2>
+            <div class="table-container">
+                <table id="mahasiswaTable">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>NIM</th>
+                            <th>CPMK012</th>
+                            <th>CPMK031</th>
+                            <th>CPMK071</th>
+                            <th>CPMK072</th>
+                            <th>Total TBP</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dataset dari file CSV
+        const rawData = `No;NIM;CPMK012;CPMK031;CPMK071;CPMK072;Total_TBP
+1;2101020014;100;90;100;100;99,1
+2;2101020024;100;20;70;70;68,2
+3;2101020048;100;90;100;100;99,1
+4;2101020058;100;90;100;100;99,1
+5;2101020074;90;60;70;70;70,9
+6;2101020092;100;20;70;70;68,2
+7;2101020103;0;0;0;0;0
+8;2101020104;90;60;70;70;70,9
+9;2101020117;90;60;70;70;70,9
+10;2201020001;100;60;60;60;63,6
+11;2201020002;100;80;70;70;73,6
+12;2201020010;100;80;90;90;90
+13;2201020014;100;60;60;60;63,6
+14;2201020015;100;60;60;60;63,6
+15;2201020018;100;70;100;100;97,3
+16;2201020019;100;80;90;90;90
+17;2201020022;90;20;50;50;50,9
+18;2201020026;100;80;70;70;73,6
+19;2201020032;100;80;90;90;90
+20;2201020039;100;80;70;70;73,6
+21;2201020041;100;80;90;90;90
+22;2201020047;100;75;50;50;56,8
+23;2201020048;100;70;100;100;97,3
+24;2201020057;100;75;50;50;56,8
+25;2201020063;100;76;100;100;97,8
+26;2201020065;100;75;85;85;85,5
+27;2201020066;100;60;50;50;55,5
+28;2201020067;100;80;90;90;90
+29;2201020070;100;75;100;100;97,7
+30;2201020074;100;60;50;50;55,5
+31;2201020075;100;80;90;90;90
+32;2201020083;100;80;90;90;90
+33;2201020086;0;0;0;0;0
+34;2201020090;100;75;100;100;97,7
+35;2201020091;100;80;90;90;90
+36;2201020092;100;60;50;50;55,5
+37;2201020093;100;75;85;85;85,5
+38;2201020094;100;80;90;90;90
+39;2201020095;100;75;85;85;85,5
+40;2201020098;100;75;50;50;56,8
+41;2201020099;100;80;90;90;90
+42;2201020100;100;80;70;70;73,6
+43;2201020103;100;70;100;100;97,3
+44;2201020104;100;80;70;70;73,6
+45;2201020105;100;70;50;50;56,4
+46;2201020106;90;50;40;40;45,5
+47;2201020109;100;80;70;70;73,6
+48;2201020112;90;50;40;40;45,5
+49;2201020116;90;50;40;40;45,5
+50;2201020117;100;70;50;50;56,4
+51;2201020118;100;80;90;90;90
+52;2201020122;100;70;50;50;56,4
+53;2201020123;90;20;50;50;50,9`;
+
+        // Parsing data CSV
+        const parseCSV = (csv) => {
+            const lines = csv.trim().split('\n');
+            const headers = lines[0].split(';');
+            
+            return lines.slice(1).map(line => {
+                const values = line.split(';');
+                const obj = {};
+                
+                headers.forEach((header, i) => {
+                    // Konversi string ke number untuk nilai numerik
+                    if (i > 1) { // Kolom numerik mulai dari indeks 2
+                        let value = values[i];
+                        // Ganti koma dengan titik untuk format angka
+                        value = value.replace(',', '.');
+                        obj[header] = parseFloat(value);
+                    } else {
+                        obj[header] = values[i];
+                    }
+                });
+                
+                return obj;
+            });
+        };
+
+        const mahasiswaData = parseCSV(rawData);
+        
+        // Konfigurasi radar chart
+        const config = {
+            maxValue: 100, // Nilai maksimum untuk sumbu
+            levels: 5,     // Jumlah level lingkaran
+            labelFactor: 1.25, // Seberapa jauh label dari tengah
+            wrapWidth: 60,     // Lebar maksimum teks label
+            opacityArea: 0.35, // Opacity area
+            dotRadius: 4,      // Radius titik data
+            strokeWidth: 2,    // Lebar garis
+            colors: {
+                axis: "#999",
+                levels: "#CDCDCD",
+                data: "rgba(70, 130, 180, 0.8)",
+                dataStroke: "rgba(70, 130, 180, 1)",
+                dataFill: "rgba(70, 130, 180, 0.3)"
+            }
+        };
+
+        // Fungsi untuk menggambar radar chart
+        function drawRadarChart(id, data) {
+            const canvas = document.getElementById(id);
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(centerX, centerY) * 0.8;
+            
+            // Bersihkan canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Jumlah sumbu (berdasarkan jumlah data)
+            const total = data.length;
+            const angleSlice = (Math.PI * 2) / total;
+            
+            // Fungsi untuk menentukan posisi X,Y berdasarkan nilai dan sudut
+            function getPosition(value, i) {
+                const angle = i * angleSlice - Math.PI / 2; // Mulai dari atas
+                const distance = (value / config.maxValue) * radius;
+                return {
+                    x: centerX + distance * Math.cos(angle),
+                    y: centerY + distance * Math.sin(angle)
+                };
+            }
+            
+            // Gambar level lingkaran
+            for (let j = 0; j < config.levels; j++) {
+                const levelFactor = radius * ((j + 1) / config.levels);
+                
+                // Gambar lingkaran
+                ctx.beginPath();
+                for (let i = 0; i < total; i++) {
+                    const angle = i * angleSlice - Math.PI / 2;
+                    if (i === 0) {
+                        ctx.moveTo(centerX + levelFactor * Math.cos(angle), centerY + levelFactor * Math.sin(angle));
+                    } else {
+                        ctx.lineTo(centerX + levelFactor * Math.cos(angle), centerY + levelFactor * Math.sin(angle));
+                    }
+                }
+                ctx.closePath();
+                ctx.strokeStyle = config.colors.levels;
+                ctx.stroke();
+                
+                // Tambahkan label nilai untuk setiap level
+                if (j === config.levels - 1) {
+                    const levelValue = Math.round(((j + 1) * config.maxValue) / config.levels);
+                    ctx.fillStyle = "#999";
+                    ctx.font = "10px Arial";
+                    ctx.textAlign = "center";
+                    ctx.fillText(levelValue, centerX, centerY - levelFactor - 5);
+                }
+            }
+            
+            // Gambar sumbu
+            for (let i = 0; i < total; i++) {
+                const angle = i * angleSlice - Math.PI / 2;
+                
+                // Gambar garis sumbu
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(centerX + radius * Math.cos(angle), centerY + radius * Math.sin(angle));
+                ctx.strokeStyle = config.colors.axis;
+                ctx.stroke();
+                
+                // Tambahkan label
+                const labelPosition = getPosition(config.maxValue * config.labelFactor, i);
+                
+                ctx.font = "12px Arial";
+                ctx.fillStyle = "#333";
+                ctx.textAlign = "center";
+                
+                ctx.fillText(data[i].label, labelPosition.x, labelPosition.y);
+            }
+            
+            // Gambar area data
+            ctx.beginPath();
+            for (let i = 0; i < total; i++) {
+                const pos = getPosition(data[i].value, i);
+                if (i === 0) {
+                    ctx.moveTo(pos.x, pos.y);
+                } else {
+                    ctx.lineTo(pos.x, pos.y);
+                }
+            }
+            ctx.closePath();
+            ctx.fillStyle = config.colors.dataFill;
+            ctx.fill();
+            ctx.strokeStyle = config.colors.dataStroke;
+            ctx.lineWidth = config.strokeWidth;
+            ctx.stroke();
+            
+            // Gambar titik data
+            for (let i = 0; i < total; i++) {
+                const pos = getPosition(data[i].value, i);
+                
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, config.dotRadius, 0, 2 * Math.PI);
+                ctx.fillStyle = config.colors.dataStroke;
+                ctx.fill();
+            }
+        }
+
+        // Fungsi untuk menampilkan data mahasiswa
+        function updateMahasiswaChart() {
+            const selectElement = document.getElementById('mahasiswaSelect');
+            const selectedIndex = selectElement.selectedIndex;
+            
+            if (selectedIndex === -1) return;
+            
+            const mahasiswa = mahasiswaData[selectedIndex];
+            
+            // Update judul
+            document.getElementById('mahasiswaName').textContent = `Mahasiswa: ${mahasiswa.NIM}`;
+            
+            // Update statistik
+            document.getElementById('cpmk012Value').textContent = mahasiswa.CPMK012;
+            document.getElementById('cpmk031Value').textContent = mahasiswa.CPMK031;
+            document.getElementById('cpmk071Value').textContent = mahasiswa.CPMK071;
+            document.getElementById('cpmk072Value').textContent = mahasiswa.CPMK072;
+            document.getElementById('totalValue').textContent = mahasiswa.Total_TBP;
+            
+            // Siapkan data untuk radar chart
+            const chartData = [
+                { label: 'CPMK012', value: mahasiswa.CPMK012 },
+                { label: 'CPMK031', value: mahasiswa.CPMK031 },
+                { label: 'CPMK071', value: mahasiswa.CPMK071 },
+                { label: 'CPMK072', value: mahasiswa.CPMK072 }
+            ];
+            
+            // Gambar radar chart
+            drawRadarChart('radarChart', chartData);
+        }
+
+        // Inisialisasi dropdown mahasiswa
+        function initializeMahasiswaSelect() {
+            const selectElement = document.getElementById('mahasiswaSelect');
+            
+            mahasiswaData.forEach(mahasiswa => {
+                const option = document.createElement('option');
+                option.value = mahasiswa.NIM;
+                option.textContent = `${mahasiswa.NIM} (Total: ${mahasiswa.Total_TBP})`;
+                selectElement.appendChild(option);
+            });
+            
+            // Pilih mahasiswa pertama secara default
+            if (mahasiswaData.length > 0) {
+                updateMahasiswaChart();
+            }
+        }
+
+        // Inisialisasi tabel data
+        function initializeTable() {
+            const tableBody = document.getElementById('tableBody');
+            
+            mahasiswaData.forEach(mahasiswa => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${mahasiswa.No}</td>
+                    <td>${mahasiswa.NIM}</td>
+                    <td>${mahasiswa.CPMK012}</td>
+                    <td>${mahasiswa.CPMK031}</td>
+                    <td>${mahasiswa.CPMK071}</td>
+                    <td>${mahasiswa.CPMK072}</td>
+                    <td>${mahasiswa.Total_TBP}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Tampilkan tampilan yang dipilih
+        function showView(viewId) {
+            // Sembunyikan semua tampilan
+            document.getElementById('chartView').style.display = 'none';
+            document.getElementById('tableView').style.display = 'none';
+            
+            // Reset button states
+            document.getElementById('btnChart').classList.remove('active');
+            document.getElementById('btnTable').classList.remove('active');
+            
+            // Tampilkan tampilan yang dipilih
+            document.getElementById(viewId).style.display = 'block';
+            
+            // Set button state
+            if (viewId === 'chartView') {
+                document.getElementById('btnChart').classList.add('active');
+            } else if (viewId === 'tableView') {
+                document.getElementById('btnTable').classList.add('active');
+            }
+        }
+
+        // Inisialisasi aplikasi
+        window.onload = function() {
+            initializeMahasiswaSelect();
+            initializeTable();
+        };
+    </script>
+</body>
+</html>
